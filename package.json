@@ -13,7 +13,9 @@
     "axios": "^1.4.0",
     "echarts": "^5.4.2",
     "element-plus": "^2.3.7",
+    "less": "^4.1.3",
     "vue": "^3.2.47",
+    "vue-puzzle-vcode": "^1.1.10",
     "vue-router": "^4.2.1"
   },
   "devDependencies": {

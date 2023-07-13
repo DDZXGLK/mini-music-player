@@ -3,11 +3,15 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/music'
+    redirect: '/login'
   },
   {
     path: '/music',
     component: () => import('@v/music/index.vue')
+  },
+  {
+    path: '/login',
+    component: () => import('@v/login/login.vue')
   }
 ]
 
