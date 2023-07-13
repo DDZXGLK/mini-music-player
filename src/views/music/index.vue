@@ -159,6 +159,11 @@
       },
       // 获取音乐直链Url
       getMusicUrl(id, index) {
+        // 搜索完后直接点播放
+        if (!id) {
+          index = 0
+          id = this.musicData[index].id
+        }
         // 判断音乐是否可用
         this.$http.get('/check/music', { id }).then(res => {
           if (res.code == 200) {
@@ -176,15 +181,19 @@
         this.singer = row.ar.map(item => item.name).join('、')
         // 获取歌曲url
         this.$http.get('/song/url', { id }).then(res => {
-          this.musicUrl = res.data[0].url
-          if (!this.musicUrl) {
-            this.$message.warning('亲~暂时还没有歌曲链接呦~')
-            return this.next()
+          if (res.code == 200) {
+            this.musicUrl = res.data[0].url
+            if (!this.musicUrl) {
+              this.$message.warning('亲~暂时还没有歌曲链接呦~')
+              return this.next()
+            }
+            // 监听资源是否加载，加载完成开始播放
+            this.audio.addEventListener('canplay', () => {
+              this.audio.play()
+            })
+          }else{
+            this.$message.error(res.message)
           }
-          // 监听资源是否加载，加载完成开始播放
-          this.audio.addEventListener('canplay', () => {
-            this.audio.play()
-          })
         })
       },
       // 双击听歌
@@ -213,7 +222,7 @@
           }
           // 随机播放
           if (this.loopType == 3) {
-            this.musicIdIndex = Math.floor(Math.random() * 20)
+            this.musicIdIndex = Math.floor(Math.random() * this.pageSize)
           }
           nextPlayId = this.musicIdList[this.musicIdIndex]
           this.getMusicUrl(nextPlayId, this.musicIdIndex)
@@ -227,7 +236,7 @@
         } else {
           if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
           this.isPlay = true
-          this.audio.play()
+          this.getMusicUrl()
         }
       },
       // 上一首
