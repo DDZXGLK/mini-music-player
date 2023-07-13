@@ -5,6 +5,7 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import zhLocale from 'element-plus/lib/locale/lang/zh-cn'
 import '@a/css/font.css'
+import '@a/css/reset.css'
 
 import http from './util/request'
 import App from './App.vue'

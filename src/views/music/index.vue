@@ -166,16 +166,16 @@
           this.musicIdList = this.musicData.map(item => item.id)
           this.musicIdIndex = index
         }
-        // 判断音乐是否可用
-        this.$http.get('/check/music', { id }).then(res => {
-          if (res.code == 200) {
-            if (!res.data.success) {
-              this.$message.warning(res.data.message + '~\n已自动为您播放下一首!')
-              // 不可用  播放下一首
-              return this.next()
-            }
-          }
-        })
+        // // 判断音乐是否可用
+        // this.$http.get('/check/music', { id }).then(res => {
+        //   if (res.code == 200) {
+        //     if (!res.data.success) {
+        //       this.$message.warning(res.data.message + '~\n已自动为您播放下一首!')
+        //       // 不可用  播放下一首
+        //       return this.next()
+        //     }
+        //   }
+        // })
         // 控制器信息
         let row = this.musicData[index]
         this.picUrl = row.al.picUrl
