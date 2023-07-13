@@ -163,6 +163,8 @@
         if (!id) {
           index = 0
           id = this.musicData[index].id
+          this.musicIdList = this.musicData.map(item => item.id)
+          this.musicIdIndex = index
         }
         // 判断音乐是否可用
         this.$http.get('/check/music', { id }).then(res => {
@@ -191,7 +193,7 @@
             this.audio.addEventListener('canplay', () => {
               this.audio.play()
             })
-          }else{
+          } else {
             this.$message.error(res.message)
           }
         })
@@ -236,12 +238,17 @@
         } else {
           if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
           this.isPlay = true
-          this.getMusicUrl()
+          // 搜索后没有双击直接点播放
+          if (!this.musicIdList.length) return this.getMusicUrl()
+          this.audio.play()
         }
       },
       // 上一首
       prev() {
         if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
+        this.isPlay = true
+        // 搜索后没有双击直接点播放
+        if (!this.musicIdList.length) return this.getMusicUrl()
         // 如果是第一首 跳到最后一首
         if (this.musicIdIndex == 0) {
           this.musicIdIndex = this.musicIdList.length - 1
@@ -253,6 +260,9 @@
       // 下一首
       next() {
         if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
+        // 搜索后没有双击直接点播放
+        this.isPlay = true
+        if (!this.musicIdList.length) return this.getMusicUrl()
         // 不是当前列表最后一首
         if (this.musicIdIndex < this.musicIdList.length - 1) {
           this.musicIdIndex++
