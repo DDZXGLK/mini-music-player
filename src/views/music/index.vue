@@ -44,15 +44,28 @@
         </div>
       </div>
       <div class="control">
-        <div class="loop"><i class="iconfont icon-xunhuan"></i></div>
+        <!-- 歌曲循环方式 -->
+        <div class="loop" style="background: url('/img/shunxu.png')" v-show="loopType == 1" @click.stop="switchLoopType"></div>
+        <div class="loop" v-show="loopType == 2" @click.stop="switchLoopType"><i class="iconfont icon-xunhuan"></i></div>
+        <div class="loop" v-show="loopType == 3" @click.stop="switchLoopType"><i class="iconfont icon-suiji"></i></div>
         <div class="prev" @click="prev"><i class="iconfont icon-shangyishou"></i></div>
-        <div class="play" v-if="!isPlay" @click="play"><i class="iconfont icon-bofang"></i></div>
-        <div class="pause" v-if="isPlay" @click="play"><i class="iconfont icon-zantingtingzhi"></i></div>
+        <!-- 播放暂停 -->
+        <div class="play" v-show="!isPlay" @click="play"><i class="iconfont icon-bofang"></i></div>
+        <div class="pause" v-show="isPlay" @click="play"><i class="iconfont icon-zantingtingzhi"></i></div>
         <div class="next" @click="next"><i class="iconfont icon-xiayishou"></i></div>
+        <!-- 歌词 -->
         <div class="lyric" style="width: 30px; height: 30px; background: url('/img/lyric.png')"></div>
       </div>
       <div class="right">
-        <div class="quality">标准</div>
+        <!-- 音质 -->
+
+        <div class="quality" @click="isLevel = !isLevel">
+          {{ levelText }}
+          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">标准</div>
+          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">较高</div>
+          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">极高</div>
+          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">无损</div>
+        </div>
         <div class="voice"><i class="iconfont icon-yinliang"></i></div>
         <div class="voiceControlbg">
           <div class="voiceControl"></div>
@@ -84,7 +97,10 @@
         singer: '网易云~', //歌手名称
         loopType: 1, //歌曲循环方式  1：顺序播放 2：循环播放 3：随机播放
         musicIdList: [], //播放列表
-        musicIdIndex: 0 //下标记录播放列表播放位置
+        musicIdIndex: 0, //下标记录播放列表播放位置
+        level: 'standard', //standard => 标准 higher => 较高 exhigh=>极高 lossless=>无损
+        isLevel: false,
+        levelText: '标准'
       }
     },
     mounted() {
@@ -182,7 +198,7 @@
         this.musicName = row.name
         this.singer = row.ar.map(item => item.name).join('、')
         // 获取歌曲url
-        this.$http.get('/song/url', { id }).then(res => {
+        this.$http.get('/song/url/v1', { id, level: this.level }).then(res => {
           if (res.code == 200) {
             this.musicUrl = res.data[0].url
             if (!this.musicUrl) {
@@ -271,6 +287,47 @@
           this.musicIdIndex = 0
         }
         this.getMusicUrl(this.musicIdList[this.musicIdIndex], this.musicIdIndex)
+      },
+      // 切换播放方式
+      switchLoopType() {
+        if (this.loopType == 1) {
+          this.$nextTick(() => {
+            this.loopType = 2
+          })
+        }
+        if (this.loopType == 2) {
+          this.$nextTick(() => {
+            this.loopType = 3
+          })
+        }
+        if (this.loopType == 3) {
+          this.$nextTick(() => {
+            this.loopType = 1
+          })
+        }
+      },
+      // 切换音质
+      switchQuality(e) {
+        if (e.target.innerText == '标准') {
+          this.level = 'standard'
+          this.levelText = '标准'
+        }
+        if (e.target.innerText == '较高') {
+          this.level = 'higher'
+          this.levelText = '较高'
+        }
+        if (e.target.innerText == '极高') {
+          this.level = 'exhigh'
+          this.levelText = '极高'
+        }
+        if (e.target.innerText == '无损') {
+          this.level = 'lossless'
+          this.levelText = '无损'
+        }
+        // 有音乐在播放  this.musicIdIndex + 1 避免index为 0
+        if (this.musicIdList.length && this.musicIdIndex + 1) {
+          this.getMusicUrl(this.musicIdList[this.musicIdIndex], this.musicIdIndex)
+        }
       }
     }
   }
@@ -336,6 +393,7 @@
         font-weight: bold;
       }
       .singer {
+        margin-top: 5px;
         font-size: 14px;
         color: #aaa;
       }
@@ -347,6 +405,10 @@
       align-items: flex-start;
       width: 250px;
       height: 30px;
+      .loop {
+        width: 24px;
+        height: 24px;
+      }
       .iconfont {
         font-size: 24px !important;
       }
@@ -360,6 +422,7 @@
       justify-content: flex-end;
       align-items: center;
       .quality {
+        position: relative;
         width: 40px;
         height: 20px;
         border: 1px solid #aaa;
@@ -370,6 +433,40 @@
         color: #666;
         cursor: pointer;
         user-select: none;
+      }
+      .qualityOptions {
+        position: absolute;
+        width: 40px;
+        height: 20px;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+        text-align: center;
+        line-height: 20px;
+        background-color: #fff;
+        color: #666;
+        cursor: pointer;
+        user-select: none;
+      }
+      .qualityOptions:hover {
+        background-color: #ccc;
+        color: #fff;
+      }
+      .qualityOptions:nth-child(1) {
+        top: -120px;
+        left: 0;
+        z-index: 99;
+      }
+      .qualityOptions:nth-child(2) {
+        top: -90px;
+        left: 0;
+      }
+      .qualityOptions:nth-child(3) {
+        top: -60px;
+        left: 0;
+      }
+      .qualityOptions:nth-child(4) {
+        top: -30px;
+        left: 0;
       }
       .voiceControlbg {
         position: relative;
