@@ -409,7 +409,7 @@
   }
 </script>
 
-<style scoped>
+<style lang="less" scoped>
   :deep .el-autocomplete {
     width: 100%;
   }
