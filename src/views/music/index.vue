@@ -54,11 +54,10 @@
         <div class="pause" v-show="isPlay" @click="play"><i class="iconfont icon-zantingtingzhi"></i></div>
         <div class="next" @click="next"><i class="iconfont icon-xiayishou"></i></div>
         <!-- 歌词 -->
-        <div class="lyric" style="width: 30px; height: 30px; background: url('/img/lyric.png')"></div>
+        <div class="lyric" style="width: 30px; height: 30px; background: url('/img/lyric.png')" @click="changeIslyrc"></div>
       </div>
       <div class="right">
         <!-- 音质 -->
-
         <div class="quality" @click="isLevel = !isLevel">
           {{ levelText }}
           <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">标准</div>
@@ -74,11 +73,17 @@
       </div>
     </div>
     <audio ref="audio" :src="musicUrl"></audio>
+    <!-- 歌词 -->
+    <div class="lyrc" v-if="isLyrc">
+      <!-- <div class="items" v-for="(items, index) in parsedLyrics" :key="index"> -->
+      <span class="text" v-for="(item, index) in parsedLyrics[this.currentIndex]?.content" :key="index" :class="{ active: index <= currentLyricIndex }">{{ item.content }}</span>
+      <!-- </div> -->
+    </div>
   </div>
 </template>
 
 <script>
-  import { handleMusicTime } from '@u/tools.js'
+  import { handleMusicTime, parseYrc } from '@u/tools.js'
   export default {
     name: 'Index',
     data() {
@@ -99,8 +104,11 @@
         musicIdList: [], //播放列表
         musicIdIndex: 0, //下标记录播放列表播放位置
         level: 'standard', //standard => 标准 higher => 较高 exhigh=>极高 lossless=>无损
-        isLevel: false,
-        levelText: '标准'
+        isLevel: false, //音质切换
+        levelText: '标准', //当前音质
+        parsedLyrics: [], //歌词
+        currentIndex: 0, //当前歌词下标
+        isLyrc: false //是否展示歌词
       }
     },
     mounted() {
@@ -221,6 +229,7 @@
         this.musicIdList = this.musicData.map(item => item.id)
         this.musicIdIndex = this.musicData.findIndex(item => item.id == row.id)
         this.getMusicUrl(row.id, this.musicIdIndex)
+        this.getLyric()
         // 监听音乐是否播放完
         this.audio.addEventListener('ended', () => {
           let nextPlayId = ''
@@ -244,6 +253,7 @@
           }
           nextPlayId = this.musicIdList[this.musicIdIndex]
           this.getMusicUrl(nextPlayId, this.musicIdIndex)
+          this.getLyric()
         })
       },
       // 播放、暂停
@@ -272,6 +282,7 @@
           this.musicIdIndex--
         }
         this.getMusicUrl(this.musicIdList[this.musicIdIndex], this.musicIdIndex)
+        this.getLyric()
       },
       // 下一首
       next() {
@@ -287,6 +298,7 @@
           this.musicIdIndex = 0
         }
         this.getMusicUrl(this.musicIdList[this.musicIdIndex], this.musicIdIndex)
+        this.getLyric()
       },
       // 切换播放方式
       switchLoopType() {
@@ -328,6 +340,66 @@
         if (this.musicIdList.length && this.musicIdIndex + 1) {
           this.getMusicUrl(this.musicIdList[this.musicIdIndex], this.musicIdIndex)
         }
+      },
+      // 歌词点击
+      changeIslyrc() {
+        this.isLyrc = !this.isLyrc
+        this.getLyric()
+      },
+      // 获取歌词
+      getLyric() {
+        if (this.isLyrc) {
+          if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
+          // 有音乐在播放  this.musicIdIndex + 1 避免index为 0
+          if (this.musicIdList.length && this.musicIdIndex + 1) {
+            this.$http.get('/lyric/new', { id: this.musicIdList[this.musicIdIndex] }).then(res => {
+              if (!res.yrc?.lyric) {
+                this.isLyrc = false
+                return this.$message.warning('暂无歌词!')
+              }
+              const lyrics = res.yrc.lyric
+              // 处理歌词
+              this.audio.addEventListener('timeupdate', () => {
+                this.parsedLyrics = parseYrc(lyrics)
+                this.currentIndex = this.findIndex()
+              })
+            })
+          } else {
+            this.$message.warning('暂无歌曲播放!')
+          }
+        } else {
+          this.audio.removeEventListener('timeupdate', () => {
+            this.currentIndex = this.findIndex()
+          })
+        }
+      },
+      // 当前播放的下标
+      findIndex() {
+        let currentTime = this.audio.currentTime
+        for (let i = 0; i < this.parsedLyrics.length; i++) {
+          if (currentTime < this.parsedLyrics[i].time) {
+            return i - 1 < 0 ? 0 : i - 1
+          }
+        }
+        return this.parsedLyrics.length - 1
+      }
+    },
+    computed: {
+      currentLyricIndex() {
+        let currentLyric = this.parsedLyrics[this.currentIndex].content
+        // 赋值-1防止开始进去就高亮第一个词
+        let currentLyricIndex = -1
+        for (let i = 0; i < currentLyric.length; i++) {
+          if (currentLyric[i].time < this.audio.currentTime && this.audio.currentTime < currentLyric[i].time + currentLyric[i].duration) {
+            currentLyricIndex = i
+            break
+          }
+          // 一句放完了
+          if (this.audio.currentTime > currentLyric[currentLyric.length - 1].time) {
+            currentLyricIndex = currentLyric.length - 1
+          }
+        }
+        return currentLyricIndex
       }
     }
   }
@@ -493,6 +565,24 @@
           background-color: #409eff;
         }
       }
+    }
+  }
+  /* 歌词 */
+  .lyrc {
+    width: 100%;
+    height: 50px;
+    /* overflow: hidden; */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    .text {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 50px;
+    }
+    .active {
+      color: #409eff;
     }
   }
 </style>
