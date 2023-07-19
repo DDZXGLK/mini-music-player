@@ -388,11 +388,15 @@
       currentLyricIndex() {
         let currentLyric = this.parsedLyrics[this.currentIndex].content
         // 赋值-1防止开始进去就高亮第一个词
-        let currentLyricIndex = -1
+        let currentLyricIndex
         for (let i = 0; i < currentLyric.length; i++) {
           if (currentLyric[i].time < this.audio.currentTime && this.audio.currentTime < currentLyric[i].time + currentLyric[i].duration) {
             currentLyricIndex = i
             break
+          }
+          // 第一句还没开始
+          if (this.audio.currentTime < currentLyric[0].time) {
+            currentLyricIndex = -1
           }
           // 一句放完了
           if (this.audio.currentTime > currentLyric[currentLyric.length - 1].time) {
@@ -583,6 +587,7 @@
     }
     .active {
       color: #409eff;
+      transition: 0.5s;
     }
   }
 </style>
