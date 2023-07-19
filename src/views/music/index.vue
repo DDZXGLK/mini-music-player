@@ -65,7 +65,8 @@
           <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">极高</div>
           <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">无损</div>
         </div>
-        <div class="voice"><i class="iconfont icon-yinliang"></i></div>
+        <div class="voice" v-if="!isMute" @click="mute"><i class="iconfont icon-yinliang"></i></div>
+        <div class="voice" v-else @click="mute" style="width: 16px; height: 16px; background: url('/img/jingyin.png')"></div>
         <div ref="voiceControlbg" class="voiceControlbg">
           <div ref="voiceControl" :style="{ left: voiceControlLeft }" class="voiceControl" @mousedown.stop="voiceControlMousedown($event)"></div>
           <div class="voiceSize" :style="{ width: voiceSizeWidth }"></div>
@@ -109,14 +110,16 @@
         parsedLyrics: [], //歌词
         currentIndex: 0, //当前歌词下标
         isLyrc: false, //是否展示歌词
-        voiceControlLeft: -5,
-        voiceSizeWidth: 0, //音量条长度
-        voiceControlflag: false //音量条按下标志
+        voiceControlLeft: 15 + 'px',//音量小圆点位置
+        voiceSizeWidth: 20 + '%', //音量条长度
+        voiceControlflag: false, //音量条按下标志
+        isMute: false //是否静音
       }
     },
     mounted() {
       this.getSearchDefault()
       this.getAudio()
+      this.audio.volume = 0.2
       document.body.addEventListener('mousemove', e => {
         if (this.voiceControlflag) {
           this.voiceSize(e.clientX)
@@ -415,8 +418,13 @@
         } else {
           this.audio.volume = voiceSize / voiceControlbgWidth
           this.voiceControlLeft = voiceSize - 5 + 'px'
-          this.voiceSizeWidth = (voiceSize / voiceControlbgWidth) * 100 + '%'
+          this.voiceSizeWidth = this.audio.volume * 100 + '%'
         }
+      },
+      // 一键静音
+      mute() {
+        this.isMute = !this.isMute
+        this.audio.muted = !this.audio.muted
       }
     },
     computed: {
@@ -588,7 +596,6 @@
         margin-left: 10px;
         .voiceControl {
           position: absolute;
-          left: -5px;
           top: -2px;
           width: 10px;
           height: 10px;
