@@ -66,9 +66,9 @@
           <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">无损</div>
         </div>
         <div class="voice"><i class="iconfont icon-yinliang"></i></div>
-        <div class="voiceControlbg">
-          <div class="voiceControl"></div>
-          <div class="voiceSize"></div>
+        <div ref="voiceControlbg" class="voiceControlbg">
+          <div ref="voiceControl" :style="{ left: voiceControlLeft }" class="voiceControl" @mousedown.stop="voiceControlMousedown($event)"></div>
+          <div class="voiceSize" :style="{ width: voiceSizeWidth }"></div>
         </div>
       </div>
     </div>
@@ -108,12 +108,23 @@
         levelText: '标准', //当前音质
         parsedLyrics: [], //歌词
         currentIndex: 0, //当前歌词下标
-        isLyrc: false //是否展示歌词
+        isLyrc: false, //是否展示歌词
+        voiceControlLeft: -5,
+        voiceSizeWidth: 0, //音量条长度
+        voiceControlflag: false //音量条按下标志
       }
     },
     mounted() {
       this.getSearchDefault()
       this.getAudio()
+      document.body.addEventListener('mousemove', e => {
+        if (this.voiceControlflag) {
+          this.voiceSize(e.clientX)
+        }
+      })
+      document.body.addEventListener('mouseup', () => {
+        this.voiceControlflag = false
+      })
     },
     methods: {
       // 获取audio对象
@@ -382,6 +393,30 @@
           }
         }
         return this.parsedLyrics.length - 1
+      },
+      //拖动音量条
+      voiceControlMousedown(e) {
+        this.voiceControlflag = true
+        this.voiceSize(e.clientX)
+      },
+      // 更新音量的位置、音量调节
+      voiceSize(clientX) {
+        let cilentObj = this.$refs.voiceControlbg.getBoundingClientRect()
+        let voiceSize = clientX + 5 - cilentObj.left
+        let voiceControlbgWidth = cilentObj.right - cilentObj.left
+        if (voiceSize / voiceControlbgWidth > 1) {
+          this.audio.volume = 1
+          this.voiceControlLeft = voiceControlbgWidth - 5 + 'px'
+          this.voiceSizeWidth = 100 + '%'
+        } else if (voiceSize / voiceControlbgWidth < 0) {
+          this.audio.volume = 0
+          this.voiceControlLeft = -5 + 'px'
+          this.voiceSizeWidth = 0 + '%'
+        } else {
+          this.audio.volume = voiceSize / voiceControlbgWidth
+          this.voiceControlLeft = voiceSize - 5 + 'px'
+          this.voiceSizeWidth = (voiceSize / voiceControlbgWidth) * 100 + '%'
+        }
       }
     },
     computed: {
@@ -565,7 +600,6 @@
         .voiceSize {
           position: absolute;
           height: 6px;
-          width: 10px;
           background-color: #409eff;
         }
       }
