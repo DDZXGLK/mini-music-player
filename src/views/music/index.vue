@@ -76,7 +76,7 @@
         </div>
       </div>
       <!-- 进度条 -->
-      <div ref="progressControlbg" class="progressbg">
+      <div ref="progressControlbg" class="progressbg" @click="progress($event.clientX)">
         <div ref="progressControl" :style="{ left: progressControlLeft }" class="progressControl" @mousedown.stop="progressControlMousedown($event)"></div>
         <div class="progress" :style="{ width: progressWidth }"></div>
       </div>
@@ -118,8 +118,8 @@
         parsedLyrics: [], //歌词
         currentIndex: 0, //当前歌词下标
         isLyrc: false, //是否展示歌词
-        voiceControlLeft: 15 + 'px', //音量小圆点位置
-        voiceSizeWidth: 20 + '%', //音量条长度
+        voiceControlLeft: 35 + 'px', //音量小圆点位置
+        voiceSizeWidth: 50 + '%', //音量条长度
         voiceControlflag: false, //音量条按下标志
         isMute: false, //是否静音
         progressControlLeft: -5 + 'px',
@@ -130,7 +130,7 @@
     mounted() {
       this.getSearchDefault()
       this.getAudio()
-      this.audio.volume = 0.2
+      this.audio.volume = 0.5
       document.body.addEventListener('mousemove', e => {
         if (this.voiceControlflag) {
           this.voiceSize(e.clientX)
@@ -517,7 +517,7 @@
   }
   .music {
     width: 80%;
-    height: 100vh;
+    height: 100%;
     margin: 50px auto 0;
   }
   .el-table {
