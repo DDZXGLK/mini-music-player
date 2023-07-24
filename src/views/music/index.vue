@@ -35,42 +35,50 @@
       @update:current-page="getMusicList"
       @update:page-size="getMusicList">
     </el-pagination>
-    <div class="musicPlayer">
-      <div class="left">
-        <img class="pic" :src="picUrl" />
-        <div class="musicInfo">
-          <div class="musicName">{{ musicName }}</div>
-          <div class="singer">{{ singer }}</div>
+    <div>
+      <div class="musicPlayer">
+        <div class="left">
+          <img class="pic" :src="picUrl" />
+          <div class="musicInfo">
+            <div class="musicName">{{ musicName }}</div>
+            <div class="singer">{{ singer }}</div>
+          </div>
+        </div>
+        <div class="control">
+          <!-- 歌曲循环方式 -->
+          <div class="loop" style="background: url('/img/shunxu.png')" v-show="loopType == 1" @click.stop="switchLoopType"></div>
+          <div class="loop" v-show="loopType == 2" @click.stop="switchLoopType"><i class="iconfont icon-xunhuan"></i></div>
+          <div class="loop" v-show="loopType == 3" @click.stop="switchLoopType"><i class="iconfont icon-suiji"></i></div>
+          <div class="prev" @click="prev"><i class="iconfont icon-shangyishou"></i></div>
+          <!-- 播放暂停 -->
+          <div class="play" v-show="!isPlay" @click="play"><i class="iconfont icon-bofang"></i></div>
+          <div class="pause" v-show="isPlay" @click="play"><i class="iconfont icon-zantingtingzhi"></i></div>
+          <div class="next" @click="next"><i class="iconfont icon-xiayishou"></i></div>
+          <!-- 歌词 -->
+          <div class="lyric" style="width: 30px; height: 30px; background: url('/img/lyric.png')" @click="changeIslyrc"></div>
+        </div>
+        <div class="right">
+          <!-- 音质 -->
+          <div class="quality" @click="isLevel = !isLevel">
+            {{ levelText }}
+            <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">标准</div>
+            <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">较高</div>
+            <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">极高</div>
+            <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">无损</div>
+          </div>
+          <!-- 音量 -->
+          <div class="voice" v-if="!isMute" @click="mute"><i class="iconfont icon-yinliang"></i></div>
+          <div class="voice" v-else @click="mute" style="width: 16px; height: 16px; background: url('/img/jingyin.png')"></div>
+          <div ref="voiceControlbg" class="voiceControlbg" @click="voiceControlClick($event)">
+            <div ref="voiceControl" :style="{ left: voiceControlLeft }" class="voiceControl" @mousedown.stop="voiceControlMousedown($event)"></div>
+            <div class="voiceSize" :style="{ width: voiceSizeWidth }"></div>
+          </div>
         </div>
       </div>
-      <div class="control">
-        <!-- 歌曲循环方式 -->
-        <div class="loop" style="background: url('/img/shunxu.png')" v-show="loopType == 1" @click.stop="switchLoopType"></div>
-        <div class="loop" v-show="loopType == 2" @click.stop="switchLoopType"><i class="iconfont icon-xunhuan"></i></div>
-        <div class="loop" v-show="loopType == 3" @click.stop="switchLoopType"><i class="iconfont icon-suiji"></i></div>
-        <div class="prev" @click="prev"><i class="iconfont icon-shangyishou"></i></div>
-        <!-- 播放暂停 -->
-        <div class="play" v-show="!isPlay" @click="play"><i class="iconfont icon-bofang"></i></div>
-        <div class="pause" v-show="isPlay" @click="play"><i class="iconfont icon-zantingtingzhi"></i></div>
-        <div class="next" @click="next"><i class="iconfont icon-xiayishou"></i></div>
-        <!-- 歌词 -->
-        <div class="lyric" style="width: 30px; height: 30px; background: url('/img/lyric.png')" @click="changeIslyrc"></div>
-      </div>
-      <div class="right">
-        <!-- 音质 -->
-        <div class="quality" @click="isLevel = !isLevel">
-          {{ levelText }}
-          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">标准</div>
-          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">较高</div>
-          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">极高</div>
-          <div class="qualityOptions" v-show="isLevel" @click="switchQuality($event)">无损</div>
-        </div>
-        <div class="voice" v-if="!isMute" @click="mute"><i class="iconfont icon-yinliang"></i></div>
-        <div class="voice" v-else @click="mute" style="width: 16px; height: 16px; background: url('/img/jingyin.png')"></div>
-        <div ref="voiceControlbg" class="voiceControlbg">
-          <div ref="voiceControl" :style="{ left: voiceControlLeft }" class="voiceControl" @mousedown.stop="voiceControlMousedown($event)"></div>
-          <div class="voiceSize" :style="{ width: voiceSizeWidth }"></div>
-        </div>
+      <!-- 进度条 -->
+      <div ref="progressControlbg" class="progressbg">
+        <div ref="progressControl" :style="{ left: progressControlLeft }" class="progressControl" @mousedown.stop="progressControlMousedown($event)"></div>
+        <div class="progress" :style="{ width: progressWidth }"></div>
       </div>
     </div>
     <audio ref="audio" :src="musicUrl"></audio>
@@ -110,10 +118,13 @@
         parsedLyrics: [], //歌词
         currentIndex: 0, //当前歌词下标
         isLyrc: false, //是否展示歌词
-        voiceControlLeft: 15 + 'px',//音量小圆点位置
+        voiceControlLeft: 15 + 'px', //音量小圆点位置
         voiceSizeWidth: 20 + '%', //音量条长度
         voiceControlflag: false, //音量条按下标志
-        isMute: false //是否静音
+        isMute: false, //是否静音
+        progressControlLeft: -5 + 'px',
+        progressWidth: 0,
+        progressControlflag: false
       }
     },
     mounted() {
@@ -124,9 +135,18 @@
         if (this.voiceControlflag) {
           this.voiceSize(e.clientX)
         }
+        if (this.progressControlflag) {
+          this.progress(e.clientX)
+        }
       })
       document.body.addEventListener('mouseup', () => {
         this.voiceControlflag = false
+        this.progressControlflag = false
+      })
+      this.audio.addEventListener('timeupdate', () => {
+        let persent = (this.audio.currentTime / this.audio.duration) * 100
+        this.progressControlLeft = persent + '%'
+        this.progressWidth = persent + '%'
       })
     },
     methods: {
@@ -397,6 +417,10 @@
         }
         return this.parsedLyrics.length - 1
       },
+      //点击音量条
+      voiceControlClick(e) {
+        this.voiceSize(e.clientX)
+      },
       //拖动音量条
       voiceControlMousedown(e) {
         this.voiceControlflag = true
@@ -405,19 +429,19 @@
       // 更新音量的位置、音量调节
       voiceSize(clientX) {
         let cilentObj = this.$refs.voiceControlbg.getBoundingClientRect()
-        let voiceSize = clientX + 5 - cilentObj.left
+        let voiceSize = clientX - cilentObj.left
         let voiceControlbgWidth = cilentObj.right - cilentObj.left
         if (voiceSize / voiceControlbgWidth > 1) {
           this.audio.volume = 1
-          this.voiceControlLeft = voiceControlbgWidth - 5 + 'px'
+          this.voiceControlLeft = voiceControlbgWidth + 'px'
           this.voiceSizeWidth = 100 + '%'
         } else if (voiceSize / voiceControlbgWidth < 0) {
           this.audio.volume = 0
-          this.voiceControlLeft = -5 + 'px'
+          this.voiceControlLeft = +'px'
           this.voiceSizeWidth = 0 + '%'
         } else {
           this.audio.volume = voiceSize / voiceControlbgWidth
-          this.voiceControlLeft = voiceSize - 5 + 'px'
+          this.voiceControlLeft = voiceSize + 'px'
           this.voiceSizeWidth = this.audio.volume * 100 + '%'
         }
       },
@@ -425,6 +449,35 @@
       mute() {
         this.isMute = !this.isMute
         this.audio.muted = !this.audio.muted
+      },
+      // 拖拽音乐进度条
+      progressControlMousedown(e) {
+        this.progressControlflag = true
+        this.progress(e.clientX)
+      },
+      //播放进度调节
+      progress(clientX) {
+        if (!this.audio.duration) {
+          this.progressControlflag = false
+          return this.$message.warning('暂无歌曲播放!')
+        }
+        let cilentObj = this.$refs.progressControlbg.getBoundingClientRect()
+        let progress = clientX - cilentObj.left
+        let progressControlbgWidth = cilentObj.right - cilentObj.left
+        let total = this.audio.duration //音乐总时长
+        if (progress / progressControlbgWidth > 1) {
+          this.audio.currentTime = total
+          this.progressControlLeft = progressControlbgWidth - 5 + 'px'
+          this.progressWidth = 100 + '%'
+        } else if (progress / progressControlbgWidth < 0) {
+          this.audio.currentTime = 0
+          this.progressControlLeft = 0
+          this.progressWidth = 0
+        } else {
+          this.audio.currentTime = (progress / progressControlbgWidth) * total
+          this.progressControlLeft = progress + 'px'
+          this.progressWidth = (progress / progressControlbgWidth) * 100 + '%'
+        }
       }
     },
     computed: {
@@ -464,6 +517,7 @@
   }
   .music {
     width: 80%;
+    height: 100vh;
     margin: 50px auto 0;
   }
   .el-table {
@@ -610,6 +664,31 @@
           background-color: #409eff;
         }
       }
+    }
+  }
+  /* 进度条 */
+  .progressbg {
+    position: relative;
+    top: -15px;
+    width: 70%;
+    height: 6px;
+    border-radius: 3px;
+    background: #eee;
+    margin: auto;
+    .progressControl {
+      position: absolute;
+      top: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #409eff;
+      cursor: pointer;
+      z-index: 99;
+    }
+    .progress {
+      position: absolute;
+      height: 6px;
+      background-color: #409eff;
     }
   }
   /* 歌词 */
