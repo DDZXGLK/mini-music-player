@@ -3,12 +3,19 @@
     <el-row>
       <el-col :span="6"></el-col>
       <el-col :span="8">
-        <el-autocomplete
-          :placeholder="defaultKeyWorlds ? defaultKeyWorlds : '请输入歌曲信息'"
-          v-model="keywords"
-          :fetch-suggestions="getSearchHot"
-          clearable
-          @keyup.enter="getMusicList"></el-autocomplete>
+        <el-autocomplete :placeholder="defaultKeyWorlds ? defaultKeyWorlds : '请输入歌曲信息'" v-model="keywords" :fetch-suggestions="getSearchHot" clearable @keyup.enter="getMusicList">
+          <template #default="{ item }">
+            <div class="hot">
+              <div class="No" :class="item.index == 0 ? 'No1' : item.index == 1 ? 'No2' : item.index == 2 ? 'No3' : ''">{{ item.index + 1 }}</div>
+              <div>
+                <div class="name">
+                  {{ item.value }}<span>{{ item.score }}</span>
+                </div>
+                <div class="content" v-if="item.content">{{ item.content }}</div>
+              </div>
+            </div>
+          </template>
+        </el-autocomplete>
       </el-col>
       <el-col :span="4">
         <el-button type="primary" @click="getMusicList"> <Search style="width: 1em; height: 1em" />搜索 </el-button>
@@ -38,7 +45,7 @@
     <div>
       <div class="musicPlayer">
         <div class="left">
-          <img class="pic" :src="picUrl" />
+          <img class="pic" :src="picUrl" :class="{ rotate: isRotate }" />
           <div class="musicInfo">
             <div class="musicName">{{ musicName }}</div>
             <div class="singer">{{ singer }}</div>
@@ -106,6 +113,7 @@
         audio: null, //<audio/>对象
         isPlay: false, //是否正在播放
         musicUrl: '', //播放地址
+        isRotate: false, // 图片是否旋转
         picUrl: '/img/default.jpg', //音乐图片地址
         musicName: '快来听歌呀~', //音乐名称
         singer: '网易云~', //歌手名称
@@ -194,9 +202,9 @@
           let hotMusicList = []
           this.$http.get('/search/suggest', { keywords: queryString }).then(res => {
             if (res.code == 200) {
-              hotMusicList = res.result.songs.map(item => {
+              hotMusicList = res.result.songs.map((item, index) => {
                 let singerList = item.artists.map(item => item.name)
-                return { value: singerList.join('、') + '-' + item.name }
+                return { index: index, value: singerList.join('、') + '-' + item.name }
               })
               callback(hotMusicList)
             }
@@ -207,7 +215,7 @@
           let hotMusicList = []
           this.$http.get('/search/hot/detail').then(res => {
             if (res.code == 200) {
-              hotMusicList = res.data.map(item => (item = { value: item.searchWord }))
+              hotMusicList = res.data.map((item, index) => (item = { index: index, value: item.searchWord, score: item.score, content: item.content }))
               callback(hotMusicList)
             } else {
               this.$message.error('获取热搜列表失败！')
@@ -250,6 +258,7 @@
             // 监听资源是否加载，加载完成开始播放
             this.audio.addEventListener('canplay', () => {
               this.audio.play()
+              this.isRotate = true
             })
           } else {
             this.$message.error(res.message)
@@ -294,6 +303,7 @@
       play() {
         if (this.isPlay) {
           this.isPlay = false
+          this.isRotate = false
           this.audio.pause()
         } else {
           if (!this.musicData.length) return this.$message.warning('当前播放列表为空!')
@@ -301,6 +311,7 @@
           // 搜索后没有双击直接点播放
           if (!this.musicIdList.length) return this.getMusicUrl()
           this.audio.play()
+          this.isRotate = true
         }
       },
       // 上一首
@@ -509,6 +520,50 @@
   :deep .el-autocomplete {
     width: 100%;
   }
+  .hot {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 5px;
+    .No {
+      width: 30px;
+      height: 30px;
+      margin-right: 20px;
+      color: #ccc;
+      text-align: center;
+      line-height: 37px;
+      font-weight: bold;
+    }
+    .No1 {
+      color: #f1c40f;
+      background: url(/img/排名1.png) no-repeat center;
+    }
+    .No2 {
+      color: #cdcdcd;
+      background: url(/img/排名2.png) no-repeat center;
+    }
+    .No3 {
+      color: #e67e22;
+      background: url(/img/排名3.png) no-repeat center;
+    }
+    .name {
+      height: 28px;
+      color: #333;
+      font-size: 16px;
+      font-weight: bold;
+      span {
+        color: #cdcdcd;
+        font-size: 14px;
+        font-weight: normal;
+        margin-left: 10px;
+      }
+    }
+    .content {
+      height: 24px;
+      color: #aaa;
+      line-height: 24px;
+    }
+  }
   :deep .el-input__wrapper {
     border-radius: 4px 0 0 4px;
   }
@@ -555,6 +610,20 @@
         width: 50px;
         height: 50px;
         border-radius: 50%;
+      }
+      .rotate {
+        animation: picRotate 3s infinite linear;
+      }
+      @keyframes picRotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        50% {
+          transform: rotate(180deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
     }
 
