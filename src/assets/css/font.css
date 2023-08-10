@@ -1,8 +1,17 @@
 @font-face {
-  font-family: "iconfont"; /* Project id 2559410 */
+  font-family: "iconfont";
+  /* Project id 2559410 */
   src: url('//at.alicdn.com/t/font_2559410_7ih6tcqtq07.woff2?t=1629645337026') format('woff2'),
-       url('//at.alicdn.com/t/font_2559410_7ih6tcqtq07.woff?t=1629645337026') format('woff'),
-       url('//at.alicdn.com/t/font_2559410_7ih6tcqtq07.ttf?t=1629645337026') format('truetype');
+    url('//at.alicdn.com/t/font_2559410_7ih6tcqtq07.woff?t=1629645337026') format('woff'),
+    url('//at.alicdn.com/t/font_2559410_7ih6tcqtq07.ttf?t=1629645337026') format('truetype');
+}
+
+@font-face {
+  font-family: 'iconfont';
+  /* Project id 4187007 */
+  src: url('//at.alicdn.com/t/c/font_4187007_ht89ioheuok.woff2?t=1690511451607') format('woff2'),
+    url('//at.alicdn.com/t/c/font_4187007_ht89ioheuok.woff?t=1690511451607') format('woff'),
+    url('//at.alicdn.com/t/c/font_4187007_ht89ioheuok.ttf?t=1690511451607') format('truetype');
 }
 
 .iconfont {
@@ -183,4 +192,16 @@
 
 .icon-zantingtingzhi:before {
   content: "\e65a";
+}
+
+.icon-weixin:before {
+  content: "\e679";
+}
+
+.icon-QQ:before {
+  content: "\e882";
+}
+
+.icon-bilibili:before {
+  content: "\e600";
 }
